@@ -13,14 +13,14 @@ from utils.utils import print_arguments, make_inputs_require_grad, add_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg("train_data",    type=str, default="dataset/train.json",       help="训练数据集的路径")
+add_arg("train_data",    type=str, default="dataset/step5_train.json",       help="训练数据集的路径")
 add_arg("test_data",     type=str, default="dataset/test.json",        help="测试数据集的路径")
-add_arg("base_model",    type=str, default="openai/whisper-tiny",      help="Whisper的基础模型")
+add_arg("base_model",    type=str, default="/mnt/bn/njudevhl/whisper-finetune/models/whisper-large-v2-finetune",      help="Whisper的基础模型") # /mnt/bn/njudevhl/whisper-finetune/models/whisper-large-v2-finetune openai/whisper-large-v2
 add_arg("output_dir",    type=str, default="output/",                  help="训练保存模型的路径")
 add_arg("warmup_steps",  type=int, default=50,      help="训练预热步数")
 add_arg("logging_steps", type=int, default=100,     help="打印日志步数")
-add_arg("eval_steps",    type=int, default=1000,    help="多少步数评估一次")
-add_arg("save_steps",    type=int, default=1000,    help="多少步数保存模型一次")
+add_arg("eval_steps",    type=int, default=50,    help="多少步数评估一次")
+add_arg("save_steps",    type=int, default=50,    help="多少步数保存模型一次")
 add_arg("num_workers",   type=int, default=8,       help="读取数据的线程数量")
 add_arg("learning_rate", type=float, default=1e-3,  help="学习率大小")
 add_arg("min_audio_len", type=float, default=0.5,   help="最小的音频长度，单位秒")
@@ -31,17 +31,16 @@ add_arg("use_8bit",      type=bool,  default=False, help="是否将模型量化�
 add_arg("timestamps",    type=bool,  default=False, help="训练时是否使用时间戳数据")
 add_arg("use_compile",   type=bool, default=False, help="是否使用Pytorch2.0的编译器")
 add_arg("local_files_only", type=bool, default=False, help="是否只在本地加载模型，不尝试下载")
-add_arg("num_train_epochs", type=int, default=3,      help="训练的轮数")
-add_arg("language", type=str, default="Chinese", help="设置语言，可全称也可简写，如果为None则训练的是多语言")
+add_arg("num_train_epochs", type=int, default=10,      help="训练的轮数")
+add_arg("language", type=str, default="en", help="设置语言，可全称也可简写，如果为None则训练的是多语言")
 add_arg("task",     type=str, default="transcribe", choices=['transcribe', 'translate'], help="模型的任务")
-add_arg("augment_config_path",         type=str, default=None, help="数据增强配置文件路径")
+add_arg("augment_config_path",         type=str, default="configs/augmentation.json", help="数据增强配置文件路径") # "configs/augmentation.json"
 add_arg("resume_from_checkpoint",      type=str, default=None, help="恢复训练的检查点路径")
-add_arg("per_device_train_batch_size", type=int, default=8,    help="训练的batch size")
-add_arg("per_device_eval_batch_size",  type=int, default=8,    help="评估的batch size")
+add_arg("per_device_train_batch_size", type=int, default=6,    help="训练的batch size")
+add_arg("per_device_eval_batch_size",  type=int, default=6,    help="评估的batch size")
 add_arg("gradient_accumulation_steps", type=int, default=1,    help="梯度累积步数")
 add_arg("push_to_hub",                 type=bool, default=False, help="是否将模型权重推到HuggingFace Hub")
 add_arg("hub_model_id",                type=str,  default=None,  help="HuggingFace Hub上的模型仓库ID")
-add_arg("save_total_limit",            type=int,  default=10,  help="只保存最新检查点的数量")
 args = parser.parse_args()
 print_arguments(args)
 
@@ -127,14 +126,15 @@ def main():
                                  save_steps=args.save_steps,  # 指定保存检查点的步数
                                  eval_steps=args.eval_steps,  # 指定评估模型的步数
                                  torch_compile=args.use_compile,  # 使用Pytorch2.0的编译器
-                                 save_total_limit=args.save_total_limit,  # 只保存最新检查点的数量
+                                 save_total_limit=5,  # 只保存最新检查点的数量
                                  optim='adamw_torch',  # 指定优化方法
                                  ddp_find_unused_parameters=False if ddp else None,  # 分布式训练设置
                                  dataloader_num_workers=args.num_workers,  # 设置读取数据的线程数量
-                                 logging_steps=args.logging_steps,  # 指定打印log的步数
+                                 logging_steps=args.logging_steps,  # 指定打印log的步数∂
                                  remove_unused_columns=False,  # 删除模型不需要的数据列
                                  label_names=["labels"],  # 与标签对应的输入字典中的键列表
                                  push_to_hub=args.push_to_hub,
+                                 save_on_each_node=True,
                                  )
 
     if training_args.local_rank == 0 or training_args.local_rank == -1:
