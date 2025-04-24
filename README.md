@@ -1,8 +1,5 @@
 # 微调Whisper语音识别模型和加速推理
 
-简体中文 | [English](./README_en.md)
-
-
 ## 前言
 
 本项目的主要目标是对 Whisper 模型应用 LoRA 进行微调。由于原作者已对相关内容进行了详尽的介绍，特此致谢并推荐参考原项目获取更多细节[Whisper-Finetune
@@ -14,7 +11,7 @@
 
 ## 准备数据
 
-需要准备一个jsonlines的数据列表，数据格式如下。对于SAP数据集的准备请参考`aishell.py`。
+需要准备一个jsonlines的数据列表，数据格式如下。
 
 
 ```json
